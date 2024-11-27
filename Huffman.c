@@ -88,6 +88,87 @@ void free_arbol(HuffmanNode* raiz){
     free(raiz);
 }
 
+void generar_codigo(HuffmanNode* raiz, char* codigo_actual, int profundidad, map* diccionario) {
+    // Si el nodo es nulo, terminar recursion
+    if (raiz == NULL) return;
+
+    //Guardar en diccionario
+    if (raiz->izquierda == NULL && raiz->derecha == NULL) { // Verificar si es un nodo hoja
+        // Crear una clave para el caracter
+        char* clave = (char*)malloc(sizeof(char));
+        *clave = raiz->letra;
+
+        // Crear codigo binario del caracter y reservar memoria para el codigo
+        char* codigo = (char*)malloc((profundidad + 1) * sizeof(char));
+        
+        // Copiar el codigo generado
+        strncpy(codigo, codigo_actual, profundidad);
+        // Agregar terminador nulo
+        codigo[profundidad] = '\0';
+
+        // Guardar el par (caracter, codigo) en diccionario
+        map_put(diccionario, clave, codigo);
+        return;
+    }
+    if (raiz->izquierda) { // Rama izquierda
+        //Agregar 0 si es izquierda
+        codigo_actual[profundidad] = '0';
+        generar_codigo(raiz->izquierda, codigo_actual, profundidad + 1, diccionario);
+    }
+    if (raiz->derecha) { // Rama derecha
+        // Agregar 1 si es derecha
+        codigo_actual[profundidad] = '1';
+        generar_codigo(raiz->derecha, codigo_actual, profundidad + 1, diccionario);
+    }
+}
+
+void codificar_texto(char* texto, map* diccionario) {
+    printf("\nTexto codificado:\n");
+
+    //Recorrer cada caracter del texto
+    for (int i = 0; texto[i] != '\0'; i++) {
+        // Obtener el valor de cada uno
+        char clave = texto[i];
+        //Buscar el valor en el diccionario 
+        char* codigo = (char*)map_get(diccionario, &clave);
+        
+        //Imprimir si se econtro
+        if (codigo != NULL) {
+            printf("%s", codigo);
+        }
+    }
+    printf("\n");
+}
+
+void decodificar_texto(char* texto_comprimido, HuffmanNode* raiz) {
+    printf("\nTexto descomprimido:\n");
+    // Comenzamos en la raiz del arbol de Huffman
+    HuffmanNode* nodo_actual = raiz;
+    // Recorremos cada bit del texto comprimido
+    for (int i = 0; texto_comprimido[i] != '\0'; i++) {
+        // Si es 0, vamos a la izquierda
+        if (texto_comprimido[i] == '0') {
+            nodo_actual = nodo_actual->izquierda;
+        } 
+        // Si es 1, vamos a la derecha
+        else if (texto_comprimido[i] == '1') {
+            nodo_actual = nodo_actual->derecha;
+        } 
+        // Ignorar otros caracteres
+        else {
+            continue;
+        }
+        // Si llegamos a un nodo hoja 
+        if (nodo_actual->izquierda == NULL && nodo_actual->derecha == NULL) {
+            // Imprimir la letra
+            printf("%c", nodo_actual->letra);
+            
+            // Regresar a la raiz para comenzar a decodificar el siguiente 
+            nodo_actual = raiz;
+        }
+    }
+    printf("\n");
+}
 
 int main(){
     char codigo[100];
@@ -151,6 +232,7 @@ int main(){
     }
 
     HuffmanNode* raiz = (HuffmanNode*)pq_poll(cola);
+    
     printf("\nArbol de Huffman:\n");
     print_arbol(raiz, 0);
 
@@ -164,6 +246,25 @@ int main(){
             free(temp);
         }   
     }
+//==============
+    map *diccionario = map_create(TABLE_TAMANO, hash_function, key_equals);
+    char codigo_actual[100];
+    generar_codigo(raiz, codigo_actual, 0, diccionario);
+
+    printf("\nTabla de códigos Huffman:\n");
+    for (int i = 0; i < TABLE_TAMANO; i++) {
+        node *n = diccionario->hashTable[i];
+        while (n != NULL) {
+            printf("%c: %s\n", *(char*)n->key, (char*)n->value);
+            n = n->next;
+        }
+    }
+
+    codificar_texto(codigo, diccionario);
+
+
+    map_destroy(diccionario);
+//==============
     map_destroy(m);
     free_arbol(raiz);
     free(cola);
