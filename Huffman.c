@@ -6,7 +6,7 @@
 #include "C:\Users\jorge_1dr5m1r\OneDrive\Desktop\GitHub\DDD-Urdiales\tda_pq\pq.c"
 
 #define TABLE_TAMANO 128
-
+//define los colores para el árbol binario y que sea mas facil distingir los niveles
 #define RESET "\x1b[0m"
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
@@ -15,48 +15,51 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN "\x1b[36m"
 #define WHITE "\x1b[37m"
-
+// crea un array de puointers para definir los colores
 const char* COLORES[] = {
     RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE
 };
-#define NUM_COLORES (sizeof(COLORES) / sizeof(COLORES[0]))
-
+#define NUM_COLORES (sizeof(COLORES) / sizeof(COLORES[0])) //calcula cuantos elementos hay en el arreglo dividiendo el tamaño total del arreglo entre el tamaño de un elemento
+//define la estructura llamada Letra fecuencia
 typedef struct{
     char letra;
     int frecuencia;
 }LetraFrecuencia;
-
+//Define una estructura llamada HuffmanNode
 typedef struct HuffmanNode{
     char letra;
     int frecuencia;
     struct HuffmanNode *izquierda;
     struct HuffmanNode *derecha;
 }HuffmanNode;
-
+//crea la función para calcular una key
 int hash_function(void *key){
-    char *char_key = (char*)key;
-    return (unsigned int) (*char_key) % TABLE_TAMANO;
+    char *char_key = (char*)key; //convierte el puntero en un char
+    return (unsigned int) (*char_key) % TABLE_TAMANO;//El valor resultante es el indice de la hashtable
 }
+//compara dos keys y si son iguales devuelve un 1 y si son diferentes regresa 2
 int key_equals(void *key1, void *key2){
-    return (*(char*) key1) == (*(char*) key2);
+    return (*(char*) key1) == (*(char*) key2);//Convierte los punteros en char
 }
-
+//compara los objetos para determinar el orden
 int compare_frecuencia(const void *a, const void *b){
     const LetraFrecuencia *f1 = (const LetraFrecuencia *)a;
     const LetraFrecuencia *f2 = (const LetraFrecuencia *)b;
+    //compara las frecuencias de las estructuras
     if(f1->frecuencia != f2->frecuencia){
-        return f1->frecuencia - f2->frecuencia;
+        return f1->frecuencia - f2->frecuencia;//si son diferentes devuelve la diferencia
     }
-    return f1->letra - f2->letra;
+    return f1->letra - f2->letra;//si son iguales entonces las acomoda en orden alfabético
 }
-
+//Compara los nodos de huffman dependiendo de las frecuencias
 int compare_node(void *a, void *b){
     HuffmanNode *node1 = (HuffmanNode*) a;
     HuffmanNode *node2 = (HuffmanNode*) b;
-    return node1->frecuencia - node2->frecuencia;
+    return node1->frecuencia - node2->frecuencia;//Regresa la diferencia entre los nodos
 }
-
+//Se crea una funcion para hacer los nodos de huffman
 HuffmanNode* crear_huffmanNodes(char letra, int frecuencia){
+    //guarda en la memoria dinamica el node
     HuffmanNode* node = (HuffmanNode*)malloc(sizeof(HuffmanNode));
     node->letra = letra;
     node->frecuencia = frecuencia;
@@ -64,13 +67,15 @@ HuffmanNode* crear_huffmanNodes(char letra, int frecuencia){
     node->derecha = NULL;
     return node;
 }
-
+//imprime el arbol de huffman
 void print_arbol(HuffmanNode* raiz, int nivel){
+    //si es nullo entonces no imprime nada
     if(raiz == NULL) return;
     const char* color_actual = COLORES[nivel % NUM_COLORES];
 
-    for(int i = 0; i<nivel; i++) printf("  ");
-
+    for(int i = 0; i<nivel; i++) printf("  ");//un for para alinear los espacios
+    
+    //se impime el arbol y usa los colores para que cada nivel sea de diferente color
     if(raiz->letra == '\0'){
         printf("%s*(%d)%s\n", color_actual,raiz->frecuencia, RESET);
     } else if(raiz->letra == ' ') {
@@ -81,8 +86,9 @@ void print_arbol(HuffmanNode* raiz, int nivel){
     print_arbol(raiz->izquierda, nivel + 1);
     print_arbol(raiz->derecha, nivel + 1);
 }
+//libera la memoria del arbol
 void free_arbol(HuffmanNode* raiz){
-    if(raiz == NULL) return;
+    if(raiz == NULL) return;//si es nullo no libera nada
     free_arbol(raiz->izquierda);
     free_arbol(raiz->derecha);
     free(raiz);
@@ -122,8 +128,10 @@ void generar_codigo(HuffmanNode* raiz, char* codigo_actual, int profundidad, map
     }
 }
 
-void codificar_texto(char* texto, map* diccionario) {
+void codificar_texto(char* texto, map* diccionario, char* texto_codificado) {
     printf("\nTexto codificado:\n");
+    texto_codificado[0] = '\0';//inicializador para una cadena vacia
+    char temp_codigo[1000] = "";//variable para guardar codigo
 
     //Recorrer cada caracter del texto
     for (int i = 0; texto[i] != '\0'; i++) {
@@ -132,12 +140,14 @@ void codificar_texto(char* texto, map* diccionario) {
         //Buscar el valor en el diccionario 
         char* codigo = (char*)map_get(diccionario, &clave);
         
-        //Imprimir si se econtro
+        //Imprimir si se encontro
         if (codigo != NULL) {
             printf("%s", codigo);
+            strcat(temp_codigo, codigo);//Guarda el codigo
         }
     }
     printf("\n");
+    strcpy(texto_codificado,temp_codigo);//copia el texto codificado
 }
 
 void decodificar_texto(char* texto_comprimido, HuffmanNode* raiz) {
@@ -172,6 +182,7 @@ void decodificar_texto(char* texto_comprimido, HuffmanNode* raiz) {
 
 int main(){
     char codigo[100];
+    char texto_codificado[1000];
     printf("Escriba la oracion a comprimir: \n");
     scanf(" %99[^\n]", codigo);
 
@@ -251,7 +262,7 @@ int main(){
     char codigo_actual[100];
     generar_codigo(raiz, codigo_actual, 0, diccionario);
 
-    printf("\nTabla de códigos Huffman:\n");
+    printf("\nTabla de codigos Huffman:\n");
     for (int i = 0; i < TABLE_TAMANO; i++) {
         node *n = diccionario->hashTable[i];
         while (n != NULL) {
@@ -260,10 +271,12 @@ int main(){
         }
     }
 
-    codificar_texto(codigo, diccionario);
+    codificar_texto(codigo, diccionario, texto_codificado);
+    decodificar_texto(texto_codificado, raiz);
 
 
     map_destroy(diccionario);
+    
 //==============
     map_destroy(m);
     free_arbol(raiz);
